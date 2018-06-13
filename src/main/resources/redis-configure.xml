@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!-- Jedis 连接池配置-->
+    <bean id="jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
+        <property name="maxTotal" value="100"/>
+        <property name="maxIdle" value="50"/>
+        <property name="minIdle" value="10"/>
+        <property name="testOnBorrow" value="true" />
+    </bean>
+
+    <!-- redis sentinel 配置 -->
+    <bean id="redisSentinelConfiguration" class="org.springframework.data.redis.connection.RedisSentinelConfiguration">
+        <!-- cluster name -->
+        <property name="master">
+            <bean class="org.springframework.data.redis.connection.RedisNode">
+                <property name="name" value="${redis.master.name}" />
+            </bean>
+        </property>
+
+        <!-- sentinel信息 -->
+        <property name="sentinels">
+            <set>
+                <bean class="org.springframework.data.redis.connection.RedisNode">
+                    <constructor-arg index="0" value="${redis1.ip}"/>
+                    <constructor-arg index="1" value="${redis1.port}"/>
+                </bean>
+                <bean class="org.springframework.data.redis.connection.RedisNode">
+                    <constructor-arg index="0" value="${redis2.ip}"/>
+                    <constructor-arg index="1" value="${redis2.port}"/>
+                </bean>
+                <bean class="org.springframework.data.redis.connection.RedisNode">
+                    <constructor-arg index="0" value="${redis3.ip}"/>
+                    <constructor-arg index="1" value="${redis3.port}"/>
+                </bean>
+            </set>
+        </property>
+
+        <!--数据库名称-->
+        <property name="database" value="${redis.database}"/>
+    </bean>
+
+    <!-- 连接工厂配置 -->
+    <bean id="jedisConnFactory" class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory">
+        <!-- redis sentinel配置 -->
+        <constructor-arg ref="redisSentinelConfiguration"/>
+        <!-- jedis 连接池配置 -->
+        <constructor-arg ref="jedisPoolConfig" />
+    </bean>
+
+    <!-- 数据模板配置 -->
+    <bean id="redisTemplate" class="org.springframework.data.redis.core.StringRedisTemplate">
+        <property name="connectionFactory" ref="jedisConnFactory"/>
+        <property name="keySerializer">
+            <bean class="org.springframework.data.redis.serializer.StringRedisSerializer" />
+        </property>
+        <property name="valueSerializer">
+            <bean class="org.springframework.data.redis.serializer.StringRedisSerializer" />
+        </property>
+    </bean>
+
+</beans>
